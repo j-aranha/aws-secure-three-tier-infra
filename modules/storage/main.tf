@@ -2,7 +2,7 @@
 
 # 1. S3 Bucket for sensitive data storage
 resource "aws_s3_bucket" "sensitive_data" {
-  bucket = "${var.environment_type}-${var.environment_name}-data-${var.account_id}" 
+  bucket = "${var.environment_type}-${var.environment_name}-data-${var.account_id}"
 
   # Safeguard to prevent accidental deletion of sensitive data
   lifecycle {

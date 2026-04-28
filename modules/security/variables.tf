@@ -24,3 +24,8 @@ variable "common_tags" {
   description = "A map of common tags for security resources"
   type        = map(string)
 }
+
+variable "api_gateway_stage_arn" {
+  description = "The ARN of the Public API Gateway Stage required for WAF association"
+  type        = string
+}

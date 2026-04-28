@@ -10,7 +10,7 @@ resource "aws_vpc_endpoint" "s3" {
 
   # Associating the endpoint with the route tables of the secure subnets
   route_table_ids = [
-    var.private_route_table_id, 
+    var.private_route_table_id,
     var.isolated_route_table_id
   ]
 
@@ -21,14 +21,14 @@ resource "aws_vpc_endpoint" "s3" {
 # Required for the "Private API Gateway" to be reachable from within the VPC.
 # This creates a Private IP (ENI) inside the isolated subnet.
 resource "aws_vpc_endpoint" "execute_api" {
-  vpc_id              = var.vpc_id
-  service_name        = "com.amazonaws.${var.aws_region}.execute-api"
-  vpc_endpoint_type   = "Interface"
-  
+  vpc_id            = var.vpc_id
+  service_name      = "com.amazonaws.${var.aws_region}.execute-api"
+  vpc_endpoint_type = "Interface"
+
   # Placing the endpoint interface in the isolated subnet for direct access
-  subnet_ids          = [var.isolated_subnet_id]
-  security_group_ids  = [var.endpoint_sg_id]
-  
+  subnet_ids         = [var.isolated_subnet_id]
+  security_group_ids = [var.endpoint_sg_id]
+
   # Enables private DNS so the Lambda can use the standard API Gateway URL
   private_dns_enabled = true
 
