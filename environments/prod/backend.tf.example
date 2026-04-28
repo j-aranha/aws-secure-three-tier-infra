@@ -1,0 +1,16 @@
+# Instructions for Production Migration:
+# 1. Create an S3 Bucket with Versioning enabled to store the state file.
+# 2. Create a DynamoDB table with a Partition Key named "LockID" for state locking.
+# 3. Rename this file to backend.tf and uncomment the block below to activate remote state.
+
+/*
+terraform {
+  backend "s3" {
+    bucket         = "your-terraform-state-bucket-name"
+    key            = "production/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "your-lock-table-name"
+  }
+}
+*/

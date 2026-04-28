@@ -1,3 +1,16 @@
+# --- ARCHIVE STRATEGY ---
+# This generates a dummy zip file on-the-fly, ensuring the infrastructure
+# can be validated and planned without external binary dependencies.
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  output_path = "${path.module}/dummy_lambda.zip"
+
+  source {
+    content  = "// placeholder code for infrastructure validation"
+    filename = "index.js"
+  }
+}
+
 # --- IAM ROLE ---
 resource "aws_iam_role" "lambda_exec" {
   name = "${var.environment_type}-${var.environment_name}-lambda-exec-role"
@@ -48,7 +61,9 @@ resource "aws_lambda_function" "public" {
   role          = aws_iam_role.lambda_exec.arn
   handler       = "index.handler"
   runtime       = "nodejs18.x"
-  filename      = "dummy_lambda.zip"
+
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   vpc_config {
     subnet_ids         = [var.private_subnet_id]
@@ -64,7 +79,9 @@ resource "aws_lambda_function" "isolated" {
   role          = aws_iam_role.lambda_exec.arn
   handler       = "index.handler"
   runtime       = "nodejs18.x"
-  filename      = "dummy_lambda.zip"
+
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   vpc_config {
     subnet_ids         = [var.isolated_subnet_id]
@@ -74,7 +91,7 @@ resource "aws_lambda_function" "isolated" {
   tags = merge(var.common_tags, { Name = "${var.environment_type}-${var.environment_name}-isolated-lambda" })
 }
 
-# --- 3. LAMBDA PERMISSIONS (The missing piece) ---
+# --- 3. LAMBDA PERMISSIONS ---
 
 # Allows the Public API Gateway to invoke the Public Lambda
 resource "aws_lambda_permission" "allow_public_api" {

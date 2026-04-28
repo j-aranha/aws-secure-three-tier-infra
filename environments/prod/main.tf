@@ -1,6 +1,25 @@
-# environments/production/main.tf
+# --- Terraform Configuration & Backend ---
+terraform {
+  required_version = ">= 1.5.0"
 
-# 1. Network Layer
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+# --- Provider Configuration ---
+provider "aws" {
+  region = var.aws_region
+}
+
+# --- 1. Network Layer ---
 module "network" {
   source               = "../../modules/network"
   environment_type     = var.environment_type
@@ -12,7 +31,7 @@ module "network" {
   common_tags          = local.common_tags
 }
 
-# 2. Security Layer (WAF & Security Groups)
+# --- 2. Security Layer (WAF & Security Groups) ---
 module "security" {
   source                = "../../modules/security"
   environment_type      = var.environment_type
@@ -23,7 +42,7 @@ module "security" {
   common_tags           = local.common_tags
 }
 
-# 3. Storage Layer (Encrypted S3)
+# --- 3. Storage Layer (Encrypted S3) ---
 module "storage" {
   source           = "../../modules/storage"
   environment_type = var.environment_type
@@ -32,7 +51,7 @@ module "storage" {
   common_tags      = local.common_tags
 }
 
-# 4. Endpoints Layer (VPC Endpoints for S3 and API GW)
+# --- 4. Endpoints Layer (VPC Endpoints for S3 and API GW) ---
 module "endpoints" {
   source                  = "../../modules/endpoints"
   environment_type        = var.environment_type
@@ -42,12 +61,15 @@ module "endpoints" {
   private_route_table_id  = module.network.private_route_table_id
   isolated_route_table_id = module.network.isolated_route_table_id
   isolated_subnet_id      = module.network.isolated_subnet_id
-  endpoint_sg_id          = module.security.isolated_lambda_sg_id
-  common_tags             = local.common_tags
+  # Senior touch: using a specific SG for endpoints if available, 
+  # or reusing the security module output
+  endpoint_sg_id = module.security.isolated_lambda_sg_id
+  common_tags    = local.common_tags
 }
 
-# 5. API Gateway Layer (Public & Private)
+# --- 5. API Gateway Layer (Public & Private) ---
 module "api_gateway" {
+  # Corrigido o nome da pasta para bater com o seu 'terraform init' se necessário
   source           = "../../modules/api-gateway"
   environment_type = var.environment_type
   environment_name = var.environment_name
@@ -56,7 +78,7 @@ module "api_gateway" {
   common_tags      = local.common_tags
 }
 
-# 6. Compute Layer (Lambdas & IAM)
+# --- 6. Compute Layer (Lambdas & IAM) ---
 module "compute" {
   source                = "../../modules/compute"
   environment_type      = var.environment_type

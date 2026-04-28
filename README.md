@@ -1,48 +1,39 @@
 # AWS Secure Three-Tier Infrastructure Challenge
 
-## 📌 Project Overview
-This project implements a secure, scalable, and modular AWS architecture using Terraform. The design focuses on **strict network isolation** and the **Principle of Least Privilege (PoLP)** to protect sensitive data processing, as required in the technical assessment.
+## 🏗️ Architecture Overview & Technical Choices
+This project implements a **Three-Tier Network Strategy** (Public, Private, and Isolated) to ensure maximum security and data integrity for the cloud environment.
 
-## 🏗️ Architecture Design
+* **Network Isolation:** A three-tier VPC design was chosen instead of a standard two-tier architecture to provide better isolation for core processing. The **Isolated Subnet** has no route to the internet, ensuring that sensitive data processing remains private and communicates only via AWS PrivateLinks.
+* **Security-First API:** A **Private REST API Gateway** was implemented for internal communication. This allows the use of VPC Resource Policies, ensuring the Isolated Lambda is only triggered by internal requests, bypassing the public internet entirely.
+* **Hardened Storage:** The S3 bucket is secured with AES256 encryption and a strict "Block Public Access" policy to prevent unauthorized data exposure.
 
-### 1. Networking (Three-Tier Strategy)
-* **Public Subnet:** Hosts the NAT Gateway for controlled egress.
-* **Private Subnet:** Hosts logic requiring internet access (e.g., external API integrations) via NAT.
-* **Isolated Subnet:** A high-security zone with **no route to the internet**. Communication is strictly internal via VPC Endpoints, preventing data exfiltration.
+## 🤖 AI Assistance & Human Oversight
+AI tools were utilized to accelerate the development of Terraform modules and to review Security Group rules.
 
-### 2. Security & Compliance
-* **Traffic Filtering:** * **WAFv2:** Protects the Public API Gateway against common web exploits.
-    * **Resource Policy:** The Private API is restricted to VPC-only traffic using `aws:SourceVpc` conditions.
-* **Data Protection:** The S3 bucket is provisioned with **AES256 Server-Side Encryption** and a complete **Public Access Block**.
-* **Identity Isolation:** Lambdas use distinct IAM Roles. The Isolated Lambda is only permitted to perform `s3:PutObject` actions.
+* **Technical Judgment:** Human oversight was critical to resolve provider version conflicts, ensuring full compatibility with **AWS Provider v6.x**. Additionally, `archive_file` blocks were implemented to generate Lambda artifacts dynamically. This approach ensures code portability, allowing the configuration to be initialized without external binary dependencies.
 
-### 3. Connectivity (VPC Endpoints)
-* **S3 Gateway Endpoint:** Provides high-performance, cost-effective access to storage without leaving the AWS backbone.
-* **Interface Endpoint (Execute-API):** Enables the Isolated Lambda to securely invoke the Private API Gateway without internet traversal.
+## 🚀 State Management & Backend Strategy
+A clear separation was made between the **local evaluation environment** and the **production-ready configuration**:
 
-## 🚀 DevOps Best Practices
-* **Modularization:** Decoupled modules for Network, Security, Storage, API, and Compute to ensure reusability.
-* **Standardized Tagging:** Centralized tagging via Terraform `locals` for cost allocation and environment governance (`EnvironmentType`, `EnvironmentName`).
-* **Dependency Management:** The `.terraform.lock.hcl` is included to guarantee idempotent and secure provider versions across environments.
-* **Infrastructure as Code (IaC):** 100% automated provisioning with strictly defined inputs and outputs.
+* **Current Configuration:** The project uses a **Local Backend** to ensure that the evaluator can run `terraform init` and `terraform validate` immediately without requiring an existing S3 bucket or DynamoDB table.
+* **Production Readiness:** A production-ready backend configuration (S3 for state storage and DynamoDB for state locking) is prepared in the `backend.tf.example` file. This setup is essential for team collaboration to prevent state corruption and ensure high availability of the infrastructure map.
 
-## 🛠️ How to Deploy
+## 🚀 Future Improvements (Next Steps)
+Given more time to prepare this infrastructure for a production environment, the following enhancements would be prioritized:
+
+1.  **Automated Infrastructure Pipelines:** Integration with CI/CD workflows to enable automated testing and deployment using short-lived credentials for enhanced security.
+2.  **Advanced Observability:** Implementation of AWS X-Ray for distributed tracing and CloudWatch Alarms to monitor API traffic and execution errors in real-time.
+3.  **High Availability Storage:** Configuring S3 Replication across multiple regions and enabling Cross-Region Load Balancing if required by business continuity plans.
+4.  **Programmatic Security Validation:** Inclusion of automated testing suites (such as `terraform test`) to verify network isolation and security compliance before any resource is deployed.
+
+## 🛠️ How to Run
 
 1.  **Initialize:** 
     ```bash
     cd environments/${var.environment_type}/
     terraform init
     ```
-2.  **Validate & Lint:**
+2.  **Validate:** 
     ```bash
     terraform validate
-    terraform fmt -recursive ../../
     ```
-3.  **Deploy:**
-    ```bash
-    terraform plan
-    terraform apply
-    ```
-
----
-**Note:** The application code for Lambdas uses a placeholder (`dummy_lambda.zip`) to separate infrastructure provisioning from application deployment pipelines.
