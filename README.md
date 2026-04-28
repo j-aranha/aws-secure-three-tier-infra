@@ -28,8 +28,9 @@ This project implements a secure, scalable, and modular AWS architecture using T
 
 ## 🛠️ How to Deploy
 
-1.  **Initialize:** ```bash
-    cd environments/production/
+1.  **Initialize:** 
+    ```bash
+    cd environments/${var.environment_type}/
     terraform init
     ```
 2.  **Validate & Lint:**
